@@ -1,0 +1,103 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+
+#define MaxBuffer 1500
+#define Port 8080
+
+int main() {
+    /*
+
+int socket(int domain, int type, int protocol)
+Creates an unbound socket in the specified domain.
+Returns socket file descriptor.
+Arguments : 
+    domain – Specifies the communication 
+    domain ( AF_INET for IPv4/ AF_INET6 for IPv6 ) 
+    type – Type of socket to be created 
+    ( SOCK_STREAM for TCP / SOCK_DGRAM for UDP ) 
+    protocol – Protocol to be used by the socket. 
+    0 means use default protocol for the address family.  
+
+
+
+int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
+Assigns address to the unbound socket.
+Arguments : 
+    sockfd – File descriptor of a socket to be bonded 
+    addr – Structure in which address to be bound to is specified 
+    addrlen – Size of addr structure  
+
+
+
+ssize_t sendto(int sockfd, const void *buf, size_t len, int flags,
+               const struct sockaddr *dest_addr, socklen_t addrlen)
+Send a message on the socket
+Arguments : 
+    sockfd – File descriptor of the socket 
+    buf – Application buffer containing the data to be sent 
+    len – Size of buf application buffer 
+    flags – Bitwise OR of flags to modify socket behavior 
+    dest_addr – Structure containing the address of the destination 
+    addrlen – Size of dest_addr structure  
+
+
+ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags,
+                 struct sockaddr *src_addr, socklen_t *addrlen)
+Receive a message from the socket.
+Arguments : 
+    sockfd – File descriptor of the socket 
+    buf – Application buffer in which to receive data 
+    len – Size of buf application buffer 
+    flags – Bitwise OR of flags to modify socket behavior 
+    src_addr – Structure containing source address is returned 
+    addrlen – Variable in which size of src_addr structure is returned 
+
+int close(int fd)
+Close a file descriptor */
+
+    
+    int socket_fd; // socket file descriptor
+    char buffer[MaxBuffer]; // buffer in which client messages will be stored
+    char* message = "Howdy, I am the stupid server!"; // Server message
+    struct sockaddr_in server_address, client_address;
+
+    if ((socket_fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
+        printf("Error while creating socket\n");
+        return -1;
+    }
+
+    // initialize sockaddr_in with 0
+    memset(&server_address, 0, sizeof(server_address));
+    memset(&client_address, 0, sizeof(client_address));
+
+    server_address.sin_family = AF_INET;
+    server_address.sin_addr.s_addr = INADDR_ANY;
+    server_address.sin_port = htons(Port);
+
+    // bind socket with server_address
+    if (bind(socket_fd, (const struct sockaddr_in*)&server_address, sizeof(server_address)) == -1) {
+        printf("Error while binding socket\n");
+        return -1;
+    }
+    char client_address_buffer[INET_ADDRSTRLEN];
+    
+    socklen_t client_size = sizeof(client_address), datagram_size;
+    while ((recvfrom(socket_fd, (char*)buffer, MaxBuffer, MSG_WAITALL, (struct sockaddr*)&client_address, &datagram_size)) >= 0) {
+        inet_ntop(AF_INET, &client_address.sin_addr, client_address_buffer, sizeof(client_address_buffer));
+        //printf("\nRecieved From Client with address %s datagram with size %d\n",
+        //    client_address_buffer, datagram_size);
+        
+        printf("%s\n", buffer);
+        if (strcmp(buffer,"shutdown") == 0) {
+            close(socket_fd);
+            printf("Closing server\n");
+            return 0;
+        }
+        memset(&buffer, 0, sizeof(buffer));
+    }
