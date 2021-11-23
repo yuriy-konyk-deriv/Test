@@ -130,8 +130,7 @@ int main() {
                 printf("Saving the file\n");
                 close(file_fd);
                 printf("File %s created\n", buffer);
-                //sup boe
-                //second change
+                
             }
         }
 
