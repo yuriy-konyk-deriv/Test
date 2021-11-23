@@ -18,7 +18,6 @@
 int main() {
     int socket_fd, connect_fd; // socket file descriptor
     char buffer[MaxBuffer]; // buffer in which client messages will be stored
-    char* message = "Howdy, I am the stupid server!"; // Server message
     struct sockaddr_in server_address, client_address;
 
     if ((socket_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
@@ -64,7 +63,8 @@ int main() {
         printf("Server accepted the client...\n");
 
     while (1) {
-
+        
+        // prepare buffer to next filename
         memset(&buffer, 0, sizeof(buffer));
         if (read(connect_fd, buffer, sizeof(buffer)) < 0) {
             printf("Error occured while reading from client, exiting...\n");
@@ -102,13 +102,14 @@ int main() {
                     getchar();
                 }
 
+                
                 printf("Waiting response\n");
                 char tempBuffer[MaxBuffer];
                 int file_fd = open(buffer, O_WRONLY | O_CREAT | O_EXCL, S_IRWXU & (~S_IXUSR));
                 int i = 1;
                 while (1) {
-                    memset(tempBuffer, 0, sizeof(tempBuffer));
-                    if (read(connect_fd, tempBuffer, sizeof(tempBuffer)) < 0) {
+                    memset(tempBuffer, 0, sizeof(tempBuffer)); // reset buffer for the next fragment
+                    if (read(connect_fd, tempBuffer, sizeof(tempBuffer)) < 0) { // read stream from client
                         printf("Error occured while reading from client, exiting...\n");
                         return -1;
                     }
@@ -121,6 +122,7 @@ int main() {
                         return -1;
                     }
 
+                    // stop signal
                     if (strcmp(tempBuffer, "LoLThatzAll") == 0)
                         break;
 

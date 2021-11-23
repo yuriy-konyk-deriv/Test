@@ -57,6 +57,13 @@ int main() {
     while (printf("Enter file name > ")) {
         scanf("%s", buffer);
         memcpy(filename, buffer, strlen(buffer) + 1);
+        
+        int file_fd = open(filename, O_RDONLY);
+        if (file_fd == -1) {
+            printf("There is no such file in your directory\n");
+            memset(&buffer, 0, sizeof(buffer));
+            continue;
+        }
         printf("Sending \"%s\" to Server\n", buffer);
         write(socket_fd, buffer, sizeof(buffer));
         if (strcmp(buffer, "shutdown") == 0) {
@@ -76,7 +83,6 @@ int main() {
         if (strcmp(buffer, "miss") == 0) {
             printf("Caught response, file miss\n");
             memset(&buffer, 0, sizeof(buffer));
-            int file_fd = open(filename, O_RDONLY);
             printf("Preparing to send %s file to server\n", filename);
             if (file_fd == -1) {
                 printf("There is no such file in your directory\n");
